@@ -2,7 +2,7 @@ import { useAuth } from '../../../context/AuthContext';
 
 const OrderActions = ({ onAddNewOrder, onPrintOrders, viewMode, onViewModeChange }) => {
   const { user } = useAuth();
-  const canCreateOrder = user && (user.role === 'Admin' || user.role === 'Waiter' || user.role === 'Cashier');
+  const canCreateOrder = user && (user.role === 'Admin' || user.role === 'Waiter' || user.role === 'Cashier' || user.role === 'Employee');
   const canPrint = user && (user.role === 'Admin' || user.role === 'Cashier');
 
   return (

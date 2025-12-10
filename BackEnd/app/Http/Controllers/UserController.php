@@ -18,8 +18,15 @@ class UserController extends Controller
             'email'    => 'required|email|unique:users,email',
             'phone'    => 'nullable|string|max:20',
             'address'  => 'nullable|string|max:255',
-            'password' => 'required|min:6',
-            'role'     => 'nullable|in:Admin,User,Waiter,Chef,Cashier',
+            'password' => [
+                'required',
+                'min:8',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]+$/'
+            ],
+            'role'     => 'nullable|in:Admin,Employee,Waiter,Chef,Cashier',
+        ], [
+            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&#)',
+            'password.min' => 'Password must be at least 8 characters long',
         ]);
 
         $user = User::create([
@@ -28,7 +35,7 @@ class UserController extends Controller
             'phone'    => $request->phone,
             'address'  => $request->address,
             'password' => Hash::make($request->password),
-            'role'     => $request->role ?? 'User',
+            'role'     => $request->role ?? 'Employee',
         ]);
 
         // 🔹 Generate Sanctum token immediately

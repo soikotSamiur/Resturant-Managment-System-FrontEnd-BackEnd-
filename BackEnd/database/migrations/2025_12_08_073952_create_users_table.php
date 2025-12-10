@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
             $table->string('password');
-            $table->enum('role', ['Admin', 'User', 'Waiter', 'Chef', 'Cashier'])->default('User');
+            $table->enum('role', ['Admin', 'Employee', 'Waiter', 'Chef', 'Cashier'])->default('Employee');
             $table->timestamps();
         });
     }

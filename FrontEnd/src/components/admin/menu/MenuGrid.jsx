@@ -175,14 +175,12 @@ const MenuGrid = ({ items, onAddToCart, onEditItem, onDeleteItem, onToggleAvaila
                       🌶️ {item.spicyLevel}
                     </span>
                   )}
-                </div>
               </div>
-              <span className="text-orange-500 font-bold text-lg">₹{item.price}</span>
             </div>
-            
-            <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>
-            
-            {/* Ingredients & Allergens */}
+            <span className="text-orange-500 font-bold text-lg">{item.price} <i className="fa-solid fa-bangladeshi-taka-sign"></i></span>
+          </div>
+          
+          <p className="text-gray-600 text-sm mb-3 line-clamp-2">{item.description}</p>            {/* Ingredients & Allergens */}
             {(item.ingredients?.length > 0 || item.allergens?.length > 0) && (
               <div className="text-xs text-gray-500 mb-3 space-y-1">
                 {item.ingredients?.length > 0 && (

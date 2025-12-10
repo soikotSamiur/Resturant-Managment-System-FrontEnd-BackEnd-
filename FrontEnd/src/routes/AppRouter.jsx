@@ -20,6 +20,12 @@ import InventoryPage from '../components/admin/inventory/InventoryPage';
 import ReportsPage from '../components/admin/reports/ReportsPage';
 import SettingsPage from '../components/admin/settings/SettingsPage';
 
+// User Layout & Pages
+import UserLayout from '../components/user/layout/UserLayout';
+import UserDashboardPage from '../components/user/dashboard/UserDashboardPage';
+import UserMenuPage from '../components/user/menu/UserMenuPage';
+import UserOrdersPage from '../components/user/orders/UserOrdersPage';
+
 const AppRouter = () => {
   return (
     <AuthProvider>
@@ -55,7 +61,7 @@ const AppRouter = () => {
             <Route
               path="/admin/menu"
               element={
-                <ProtectedRoute allowedRoles={['Admin', 'Waiter', 'Cashier']}>
+                <ProtectedRoute allowedRoles={['Admin', 'Waiter', 'Chef']}>
                   <MenuPage />
                 </ProtectedRoute>
               }
@@ -98,9 +104,46 @@ const AppRouter = () => {
             />
           </Route>
 
-          {/* User Dashboard Route */}
-         
-           
+          {/* User Dashboard Routes */}
+          <Route element={<UserLayout />}>
+            {/* Redirect /user to /user/dashboard */}
+            <Route
+              path="/user"
+              element={
+                <ProtectedRoute allowedRoles={['Employee']}>
+                  <Navigate to="/user/dashboard" replace />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/user/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['Employee']}>
+                  <UserDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/user/menu"
+              element={
+                <ProtectedRoute allowedRoles={['Employee']}>
+                  <UserMenuPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/user/orders"
+              element={
+                <ProtectedRoute allowedRoles={['Employee']}>
+                  <UserOrdersPage />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+
           {/* Catch-all 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

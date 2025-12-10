@@ -1,18 +1,14 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 
-const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
+const UserSidebar = ({ sidebarOpen, setSidebarOpen }) => {
     const location = useLocation();
-
     const { user, logout } = useAuth();
 
     const menuItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-line', path: '/admin/dashboard', allowedRoles: ['Admin','Waiter','Chef','Cashier'] },
-        { id: 'menu', label: 'Menu', icon: 'fas fa-utensils', path: '/admin/menu', allowedRoles: ['Admin','Waiter','Chef'] },
-        { id: 'orders', label: 'Orders', icon: 'fas fa-shopping-basket', path: '/admin/orders', allowedRoles: ['Admin','Waiter','Chef','Cashier'] },
-        { id: 'inventory', label: 'Inventory', icon: 'fas fa-boxes', path: '/admin/inventory', allowedRoles: ['Admin'] },
-        { id: 'reports', label: 'Reports', icon: 'fas fa-chart-bar', path: '/admin/reports', allowedRoles: ['Admin'] },
-        { id: 'settings', label: 'Settings', icon: 'fas fa-cog', path: '/admin/settings', allowedRoles: ['Admin'] },
+        { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-chart-line', path: '/user/dashboard' },
+        { id: 'menu', label: 'Menu', icon: 'fas fa-utensils', path: '/user/menu' },
+        { id: 'orders', label: 'Orders', icon: 'fas fa-shopping-basket', path: '/user/orders' },
     ];
 
     const isActive = (path) => location.pathname === path;
@@ -25,9 +21,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             </div>
 
             <nav className="flex-1 px-4 py-6 space-y-4 text-gray-700 text-sm overflow-y-auto">
-                {menuItems
-                    .filter(item => !item.allowedRoles || !user || item.allowedRoles.includes(user.role))
-                    .map(item => (
+                {menuItems.map(item => (
                     <Link
                         key={item.id}
                         to={item.path}
@@ -68,4 +62,4 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     );
 };
 
-export default Sidebar;
+export default UserSidebar;

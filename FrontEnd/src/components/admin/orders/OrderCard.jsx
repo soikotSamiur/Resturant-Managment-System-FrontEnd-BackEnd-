@@ -66,7 +66,7 @@ const OrderCard = ({ order, onStatusUpdate }) => {
           {order.items.map((item, index) => (
             <div key={index} className="flex justify-between text-sm">
               <span className=" text-black">{item.quantity}x {item.name}</span>
-              <span className=" text-black">${(item.price * item.quantity).toFixed(2)}</span>
+              <span className=" text-black">{(item.price * item.quantity).toFixed(2)} <i className="fa-solid fa-bangladeshi-taka-sign"></i></span>
             </div>
           ))}
         </div>

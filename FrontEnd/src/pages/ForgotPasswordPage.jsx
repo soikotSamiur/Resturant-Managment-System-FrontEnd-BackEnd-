@@ -1,18 +1,46 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { auth } from '../services/apiService';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
   const [step, setStep] = useState('email'); // 'email' or 'reset'
-  const [resetCode, setResetCode] = useState('');
+  const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleEmailSubmit = (e) => {
+  const validatePassword = (password) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[@$!%*?&#]/.test(password);
+
+    if (password.length < minLength) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!hasUpperCase) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!hasLowerCase) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!hasNumber) {
+      return 'Password must contain at least one number';
+    }
+    if (!hasSpecialChar) {
+      return 'Password must contain at least one special character (@$!%*?&#)';
+    }
+    return null;
+  };
+
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -22,32 +50,24 @@ const ForgotPasswordPage = () => {
       return;
     }
 
-    // TODO: API CALL - STEP 1: Send password reset email
-    // TODO: import apiService from '../services/apiService';
-    // TODO: try {
-    // TODO:   await apiService.auth.forgotPassword(email);
-    // TODO:   setSuccess('Password reset code sent to your email');
-    // TODO:   setStep('reset');
-    // TODO: } catch (err) {
-    // TODO:   setError(err.message || 'Failed to send reset code');
-    // TODO: } finally {
-    // TODO:   setLoading(false);
-    // TODO: }
-    
-    // CURRENT: Mock email verification - remove when API is ready
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess('Password reset code sent to your email');
+    try {
+      await auth.sendOTP(email);
+      setSuccess('OTP sent to your email successfully. Please check your inbox.');
       setStep('reset');
-    }, 1500);
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to send OTP. Please try again.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePasswordReset = (e) => {
+  const handlePasswordReset = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!resetCode || !newPassword || !confirmPassword) {
+    if (!otp || !newPassword || !confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
@@ -57,32 +77,25 @@ const ForgotPasswordPage = () => {
       return;
     }
 
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters');
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
-    // TODO: API CALL - STEP 2: Reset password with code
-    // TODO: import apiService from '../services/apiService';
-    // TODO: try {
-    // TODO:   await apiService.auth.resetPassword(email, resetCode, newPassword);
-    // TODO:   setSuccess('Password reset successful! Redirecting to login...');
-    // TODO:   setTimeout(() => navigate('/login'), 1500);
-    // TODO: } catch (err) {
-    // TODO:   setError(err.message || 'Failed to reset password');
-    // TODO: } finally {
-    // TODO:   setLoading(false);
-    // TODO: }
-    
-    // CURRENT: Mock password reset - remove when API is ready
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await auth.resetPassword(email, otp, newPassword);
       setSuccess('Password reset successful! Redirecting to login...');
       setTimeout(() => {
         navigate('/login');
-      }, 1500);
-    }, 1500);
+      }, 2000);
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to reset password. Please try again.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -147,14 +160,15 @@ const ForgotPasswordPage = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reset Code
+                OTP Code (6 digits)
               </label>
               <input
                 type="text"
-                value={resetCode}
-                onChange={(e) => setResetCode(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="Enter code from email"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                maxLength={6}
+                className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                placeholder="Enter 6-digit OTP"
                 disabled={loading}
               />
             </div>
@@ -163,28 +177,46 @@ const ForgotPasswordPage = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 New Password
               </label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="••••••••"
-                disabled={loading}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="••••••••"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                </button>
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Confirm Password
               </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="••••••••"
-                disabled={loading}
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  placeholder="••••••••"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  <i className={`fas ${showConfirmPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                </button>
+              </div>
             </div>
 
             <button

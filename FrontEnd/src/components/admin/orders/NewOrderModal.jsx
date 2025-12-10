@@ -299,7 +299,7 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
                     className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-orange-50 hover:border-orange-500 transition-all text-left"
                   >
                     <div className="text-sm font-medium text-gray-800">{item.name}</div>
-                    <div className="text-xs text-gray-600">${item.price.toFixed(2)}</div>
+                    <div className="text-xs text-gray-600">{item.price.toFixed(2)} <i className="fa-solid fa-bangladeshi-taka-sign"></i></div>
                   </button>
                 ))}
               </div>
@@ -320,7 +320,7 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
                   {selectedItems.map(item => (
                     <div key={item.id} className="grid grid-cols-5 gap-2 p-3 border-t border-gray-200 items-center">
                       <div className="text-sm text-gray-800">{item.name}</div>
-                      <div className="text-sm text-gray-800 text-center">${item.price.toFixed(2)}</div>
+                      <div className="text-sm text-gray-800 text-center">{item.price.toFixed(2)} <i className="fa-solid fa-bangladeshi-taka-sign"></i></div>
                       <input
                         type="number"
                         min="1"
@@ -328,7 +328,7 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
                         onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value))}
                         className="w-12 px-2 py-1 text-sm border border-gray-300 rounded text-center focus:outline-none focus:border-orange-500"
                       />
-                      <div className="text-sm text-gray-800 text-right">${(item.price * item.quantity).toFixed(2)}</div>
+                      <div className="text-sm text-gray-800 text-right">{(item.price * item.quantity).toFixed(2)} <i className="fa-solid fa-bangladeshi-taka-sign"></i></div>
                       <button
                         type="button"
                         onClick={() => handleRemoveItem(item.id)}

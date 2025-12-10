@@ -6,7 +6,7 @@ const AddMenuItemModal = ({ isOpen, onClose, onItemAdded, onItemUpdated, editing
     name: '',
     description: '',
     price: '',
-    category: 'starter',
+    category: 'appetizers',
     image: '',
     preparationTime: '',
     available: true,
@@ -29,7 +29,7 @@ const AddMenuItemModal = ({ isOpen, onClose, onItemAdded, onItemUpdated, editing
         name: editingItem.name || '',
         description: editingItem.description || '',
         price: editingItem.price || '',
-        category: editingItem.category || 'starter',
+        category: editingItem.category || 'appetizers',
         image: editingItem.image || '',
         preparationTime: editingItem.preparationTime || '',
         available: editingItem.available !== undefined ? editingItem.available : true,
@@ -57,9 +57,9 @@ const AddMenuItemModal = ({ isOpen, onClose, onItemAdded, onItemUpdated, editing
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image size should be less than 5MB');
+    // Validate file size (max 2MB for base64 storage)
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image size should be less than 2MB');
       return;
     }
 
@@ -71,23 +71,26 @@ const AddMenuItemModal = ({ isOpen, onClose, onItemAdded, onItemUpdated, editing
 
     try {
       setUploadingImage(true);
+      setError(null);
       
-      // Create local preview
+      // Convert image to base64
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        const base64String = reader.result;
+        setImagePreview(base64String);
+        setFormData(prev => ({ ...prev, image: base64String }));
+        setUploadingImage(false);
       };
+      
+      reader.onerror = () => {
+        setError('Failed to read image file');
+        setUploadingImage(false);
+      };
+      
       reader.readAsDataURL(file);
-
-      // Upload to server
-      const response = await apiService.menu.uploadImage(file);
-      if (response.success) {
-        setFormData(prev => ({ ...prev, image: response.imageUrl }));
-      }
     } catch (err) {
       console.error('Error uploading image:', err);
       setError('Failed to upload image');
-    } finally {
       setUploadingImage(false);
     }
   };
@@ -119,12 +122,8 @@ const AddMenuItemModal = ({ isOpen, onClose, onItemAdded, onItemUpdated, editing
         image: formData.image || 'https://via.placeholder.com/400x300?text=No+Image',
         available: formData.available,
         preparationTime: parseInt(formData.preparationTime) || 10,
-        ingredients: formData.ingredients 
-          ? formData.ingredients.split(',').map(i => i.trim()).filter(i => i)
-          : [],
-        allergens: formData.allergens 
-          ? formData.allergens.split(',').map(a => a.trim()).filter(a => a)
-          : [],
+        ingredients: formData.ingredients.trim(),
+        allergens: formData.allergens.trim(),
         isVegetarian: formData.isVegetarian,
         isVegan: formData.isVegan,
         spicyLevel: formData.spicyLevel
@@ -154,7 +153,7 @@ const AddMenuItemModal = ({ isOpen, onClose, onItemAdded, onItemUpdated, editing
       name: '',
       description: '',
       price: '',
-      category: 'starter',
+      category: 'appetizers',
       image: '',
       preparationTime: '',
       available: true,
@@ -269,9 +268,18 @@ const AddMenuItemModal = ({ isOpen, onClose, onItemAdded, onItemUpdated, editing
                       onChange={(e) => handleFormChange('category', e.target.value)}
                       className="w-full px-3 py-2 border bg-white text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     >
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
+                      {categories && categories.length > 0 ? (
+                        categories.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="appetizers">Appetizers</option>
+                          <option value="main-course">Main Course</option>
+                          <option value="desserts">Desserts</option>
+                          <option value="beverages">Beverages</option>
+                        </>
+                      )}
                     </select>
                   </div>
 
@@ -318,7 +326,7 @@ const AddMenuItemModal = ({ isOpen, onClose, onItemAdded, onItemUpdated, editing
                   <label className="block text-sm font-medium text-gray-700 mb-1">Or paste Image URL</label>
                   <input
                     type="url"
-                    value={formData.image}
+                    value={formData.image?.startsWith('data:') ? '' : formData.image}
                     onChange={(e) => {
                       handleFormChange('image', e.target.value);
                       setImagePreview(e.target.value);
@@ -326,6 +334,12 @@ const AddMenuItemModal = ({ isOpen, onClose, onItemAdded, onItemUpdated, editing
                     placeholder="https://example.com/image.jpg"
                     className="w-full px-3 py-2 border bg-white text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
+                  {formData.image?.startsWith('data:') && (
+                    <p className="text-sm text-green-600 mt-1">
+                      <i className="fas fa-check-circle mr-1"></i>
+                      Image uploaded from device
+                    </p>
+                  )}
                 </div>
 
                 {imagePreview && (

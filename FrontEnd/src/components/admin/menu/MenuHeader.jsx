@@ -2,7 +2,7 @@ import { useAuth } from '../../../context/AuthContext';
 
 const MenuHeader = ({ stats, onAddNewItem }) => {
   const { user } = useAuth();
-  const canManageMenu = user && (user.role === 'Admin' || user.role === 'Cashier');
+  const canManageMenu = user && (user.role === 'Admin' || user.role === 'Cashier' || user.role === 'Employee');
   const canExport = user && user.role === 'Admin';
 
   return (
