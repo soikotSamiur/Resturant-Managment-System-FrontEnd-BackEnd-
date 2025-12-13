@@ -1,6 +1,6 @@
 import { useAuth } from '../../../context/AuthContext';
 
-const OrderCard = ({ order, onStatusUpdate }) => {
+const OrderCard = ({ order, onStatusUpdate, onEditOrder }) => {
   const getStatusColor = (status) => {
     const colors = {
       pending: { border: 'border-yellow-500', bg: 'bg-yellow-100', text: 'text-yellow-800' },
@@ -52,13 +52,23 @@ const OrderCard = ({ order, onStatusUpdate }) => {
             <h3 className="font-bold text-lg text-black">Order #{order.id}</h3>
             <p className="text-gray-600 text-sm">
               {order.type === 'dine-in' ? `Table #${order.tableNumber} • ${order.guests} guests` : 
-               order.type === 'takeaway' ? `Takeaway • ${order.customerName}` :
-               `Delivery • ${order.customerName}`}
+               `Takeaway • ${order.customerName}`}
             </p>
           </div>
-          <span className={`${statusColor.bg} ${statusColor.text} px-2 py-1 rounded-full text-xs font-semibold`}>
-            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-          </span>
+          <div className="flex items-center gap-2">
+            {(currentRole === 'Admin' || currentRole === 'Cashier') && order.status === 'pending' && (
+              <button
+                onClick={() => onEditOrder(order)}
+                className="text-blue-600 hover:text-blue-800 transition-colors"
+                title="Edit Order"
+              >
+                <i className="fas fa-edit"></i>
+              </button>
+            )}
+            <span className={`${statusColor.bg} ${statusColor.text} px-2 py-1 rounded-full text-xs font-semibold`}>
+              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            </span>
+          </div>
         </div>
 
         {/* Order Items */}
@@ -104,7 +114,7 @@ const OrderCard = ({ order, onStatusUpdate }) => {
         {/* Order Footer */}
         <div className="border-t pt-3">
           <div className="flex justify-between items-center mb-2">
-            <div className="font-bold  text-black">Total: ${order.total.toFixed(2)}</div>
+            <div className="font-bold  text-black">Total: {order.total.toFixed(2)} <i className="fa-solid fa-bangladeshi-taka-sign"></i></div>
             <div className="text-xs text-gray-500">{order.orderTime}</div>
           </div>
           

@@ -5,12 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\OrderController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-*/
+// API Routes
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -50,21 +47,12 @@ Route::middleware(['auth:sanctum', 'role:Admin,Waiter,Chef,Employee'])->group(fu
 
 // Order Routes - Admin, Waiter, Chef, Cashier, Employee can access
 Route::middleware(['auth:sanctum', 'role:Admin,Waiter,Chef,Cashier,Employee'])->group(function () {
-    Route::get('/orders', function () {
-        return response()->json(['success' => true, 'data' => [], 'message' => 'Orders endpoint']);
-    });
-    Route::post('/orders', function () {
-        return response()->json(['success' => true, 'message' => 'Order created']);
-    });
-    Route::get('/orders/{id}', function () {
-        return response()->json(['success' => true, 'message' => 'Order details']);
-    });
-    Route::put('/orders/{id}', function () {
-        return response()->json(['success' => true, 'message' => 'Order updated']);
-    });
-    Route::delete('/orders/{id}', function () {
-        return response()->json(['success' => true, 'message' => 'Order deleted']);
-    });
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::put('/orders/{id}', [OrderController::class, 'update']);
+    Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 });
 
 // Inventory Routes - Only Admin can access

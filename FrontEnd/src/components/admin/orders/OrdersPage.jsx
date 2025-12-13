@@ -5,105 +5,107 @@ import OrderCardsGrid from './OrderCardsGrid';
 import OrderTable from './OrderTable';
 import OrderActions from './OrderActions';
 import NewOrderModal from './NewOrderModal';
+import apiService from '../../../services/apiService';
 
-// MOCK DATA (REMOVE WHEN BACKEND IS AVAILABLE):
-// - Located here for development and UI preview.
-// - Replace by fetching from `apiService.orders.getOrders()` and remove this array.
-const mockOrdersData = [
-  {
-    id: 1245,
-    customerName: "Customer One",
-    type: "dine-in",
-    tableNumber: 5,
-    guests: 2,
-    items: [
-      { name: "Grilled Salmon", quantity: 2, price: 32.00 },
-      { name: "Caesar Salad", quantity: 1, price: 12.00 },
-      { name: "Soft Drinks", quantity: 2, price: 6.00 }
-    ],
-    total: 50.00,
-    status: "pending",
-    timestamp: "2024-01-15T14:30:00Z",
-    progress: 75,
-    orderTime: "2 mins ago"
-  },
-  {
-    id: 1246,
-    customerName: "John Doe",
-    type: "takeaway",
-    phone: "+1234567890",
-    items: [
-      { name: "Beef Burger", quantity: 1, price: 18.00 },
-      { name: "French Fries", quantity: 1, price: 8.00 },
-      { name: "Chocolate Shake", quantity: 1, price: 12.00 }
-    ],
-    total: 38.00,
-    status: "preparing",
-    timestamp: "2024-01-15T14:15:00Z",
-    progress: 60,
-    estimatedTime: 15,
-    orderTime: "15 mins ago"
-  },
-  {
-    id: 1247,
-    customerName: "Sarah Smith",
-    type: "delivery",
-    address: "123 Main St, Uttara",
-    phone: "+1234567891",
-    items: [
-      { name: "Margherita Pizza", quantity: 2, price: 24.00 },
-      { name: "Garlic Bread", quantity: 1, price: 6.00 }
-    ],
-    total: 30.00,
-    status: "ready",
-    timestamp: "2024-01-15T13:45:00Z",
-    progress: 100,
-    waitingTime: 5,
-    orderTime: "30 mins ago"
-  },
-  {
-    id: 1248,
-    customerName: "Mike Johnson",
-    type: "dine-in",
-    tableNumber: 3,
-    guests: 4,
-    items: [
-      { name: "Grilled Salmon", quantity: 2, price: 32.00 },
-      { name: "Beef Burger", quantity: 2, price: 36.00 },
-      { name: "Caesar Salad", quantity: 1, price: 12.00 },
-      { name: "Fresh Orange Juice", quantity: 4, price: 19.96 }
-    ],
-    total: 99.96,
-    status: "completed",
-    timestamp: "2024-01-15T13:00:00Z",
-    progress: 100,
-    orderTime: "1 hour ago"
-  },
-  {
-    id: 1249,
-    customerName: "Emma Wilson",
-    type: "delivery",
-    address: "456 Oak Road, Uttara",
-    phone: "+1234567892",
-    items: [
-      { name: "Chocolate Cake", quantity: 1, price: 8.99 },
-      { name: "Garlic Bread", quantity: 2, price: 12.00 }
-    ],
-    total: 20.99,
-    status: "pending",
-    timestamp: "2024-01-15T14:35:00Z",
-    progress: 25,
-    orderTime: "Just now"
-  }
-];
+// // MOCK DATA (REMOVE WHEN BACKEND IS AVAILABLE):
+// // - Located here for development and UI preview.
+// // - Replace by fetching from `apiService.orders.getOrders()` and remove this array.
+// const mockOrdersData = [
+//   {
+//     id: 1245,
+//     customerName: "Customer One",
+//     type: "dine-in",
+//     tableNumber: 5,
+//     guests: 2,
+//     items: [
+//       { name: "Grilled Salmon", quantity: 2, price: 32.00 },
+//       { name: "Caesar Salad", quantity: 1, price: 12.00 },
+//       { name: "Soft Drinks", quantity: 2, price: 6.00 }
+//     ],
+//     total: 50.00,
+//     status: "pending",
+//     timestamp: "2024-01-15T14:30:00Z",
+//     progress: 75,
+//     orderTime: "2 mins ago"
+//   },
+//   {
+//     id: 1246,
+//     customerName: "John Doe",
+//     type: "takeaway",
+//     phone: "+1234567890",
+//     items: [
+//       { name: "Beef Burger", quantity: 1, price: 18.00 },
+//       { name: "French Fries", quantity: 1, price: 8.00 },
+//       { name: "Chocolate Shake", quantity: 1, price: 12.00 }
+//     ],
+//     total: 38.00,
+//     status: "preparing",
+//     timestamp: "2024-01-15T14:15:00Z",
+//     progress: 60,
+//     estimatedTime: 15,
+//     orderTime: "15 mins ago"
+//   },
+//   {
+//     id: 1247,
+//     customerName: "Sarah Smith",
+//     type: "delivery",
+//     address: "123 Main St, Uttara",
+//     phone: "+1234567891",
+//     items: [
+//       { name: "Margherita Pizza", quantity: 2, price: 24.00 },
+//       { name: "Garlic Bread", quantity: 1, price: 6.00 }
+//     ],
+//     total: 30.00,
+//     status: "ready",
+//     timestamp: "2024-01-15T13:45:00Z",
+//     progress: 100,
+//     waitingTime: 5,
+//     orderTime: "30 mins ago"
+//   },
+//   {
+//     id: 1248,
+//     customerName: "Mike Johnson",
+//     type: "dine-in",
+//     tableNumber: 3,
+//     guests: 4,
+//     items: [
+//       { name: "Grilled Salmon", quantity: 2, price: 32.00 },
+//       { name: "Beef Burger", quantity: 2, price: 36.00 },
+//       { name: "Caesar Salad", quantity: 1, price: 12.00 },
+//       { name: "Fresh Orange Juice", quantity: 4, price: 19.96 }
+//     ],
+//     total: 99.96,
+//     status: "completed",
+//     timestamp: "2024-01-15T13:00:00Z",
+//     progress: 100,
+//     orderTime: "1 hour ago"
+//   },
+//   {
+//     id: 1249,
+//     customerName: "Emma Wilson",
+//     type: "delivery",
+//     address: "456 Oak Road, Uttara",
+//     phone: "+1234567892",
+//     items: [
+//       { name: "Chocolate Cake", quantity: 1, price: 8.99 },
+//       { name: "Garlic Bread", quantity: 2, price: 12.00 }
+//     ],
+//     total: 20.99,
+//     status: "pending",
+//     timestamp: "2024-01-15T14:35:00Z",
+//     progress: 25,
+//     orderTime: "Just now"
+//   }
+// ];
 
 const OrdersPage = () => {
-  const [orders, setOrders] = useState(mockOrdersData);
+  const [orders, setOrders] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'table'
-  const [_loading, setLoading] = useState(false);
-  const [_error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -112,18 +114,14 @@ const OrdersPage = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      // TODO: API CALL - Fetch all orders
-      // TODO: import apiService from '../../../services/apiService';
-      // TODO: const response = await apiService.orders.getOrders();
-      // TODO: setOrders(response.orders);
-      
-      // CURRENT: Mock data - remove when API is ready
-      setOrders(mockOrdersData);
+      const response = await apiService.orders.getOrders();
+      setOrders(response.data || []);
       setError(null);
     } catch (err) {
-      // TODO: Handle API errors
       setError(err.message || 'Failed to fetch orders');
       console.error('Failed to fetch orders:', err);
+      // Set empty array on error
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -147,19 +145,16 @@ const OrdersPage = () => {
   // Update order status
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      // TODO: API CALL - Update order status
-      // TODO: import apiService from '../../../services/apiService';
-      // TODO: await apiService.orders.updateOrderStatus(orderId, newStatus);
-      
-      // CURRENT: Mock update - remove when API is ready
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order.id === orderId ? { ...order, status: newStatus } : order
-        )
-      );
+      const response = await apiService.orders.updateOrderStatus(orderId, newStatus);
+      if (response.success) {
+        setOrders(prevOrders => 
+          prevOrders.map(order => 
+            order.id === orderId ? response.data : order
+          )
+        );
+      }
       setError(null);
     } catch (err) {
-      // TODO: Handle API errors
       setError(err.message || 'Failed to update order status');
       console.error('Failed to update order status:', err);
     }
@@ -167,12 +162,30 @@ const OrdersPage = () => {
 
   // Add new order
   const addNewOrder = () => {
+    setEditingOrder(null);
     setIsNewOrderModalOpen(true);
   };
 
   // Handle new order creation
   const handleOrderCreated = (newOrder) => {
     setOrders(prevOrders => [newOrder, ...prevOrders]);
+    setError(null);
+  };
+
+  // Handle edit order
+  const handleEditOrder = (order) => {
+    setEditingOrder(order);
+    setIsNewOrderModalOpen(true);
+  };
+
+  // Handle order update
+  const handleOrderUpdated = (updatedOrder) => {
+    setOrders(prevOrders => 
+      prevOrders.map(order => 
+        order.id === updatedOrder.id ? updatedOrder : order
+      )
+    );
+    setEditingOrder(null);
     setError(null);
   };
 
@@ -213,19 +226,26 @@ const OrdersPage = () => {
         <OrderCardsGrid 
           orders={filteredOrders}
           onStatusUpdate={updateOrderStatus}
+          onEditOrder={handleEditOrder}
         />
       ) : (
         <OrderTable 
           orders={filteredOrders}
           onStatusUpdate={updateOrderStatus}
+          onEditOrder={handleEditOrder}
         />
       )}
 
       {/* New Order Modal */}
       <NewOrderModal 
         isOpen={isNewOrderModalOpen}
-        onClose={() => setIsNewOrderModalOpen(false)}
+        onClose={() => {
+          setIsNewOrderModalOpen(false);
+          setEditingOrder(null);
+        }}
         onOrderCreated={handleOrderCreated}
+        onOrderUpdated={handleOrderUpdated}
+        editingOrder={editingOrder}
       />
     </div>
   );

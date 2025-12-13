@@ -1,9 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import apiService from '../../../services/apiService';
 
-// TODO: Uncomment when API is ready
-// import apiService from '../../../services/apiService';
-
-const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
+const NewOrderModal = ({ isOpen, onClose, onOrderCreated, onOrderUpdated, editingOrder }) => {
   const [orderType, setOrderType] = useState('dine-in');
   const [formData, setFormData] = useState({
     customerName: '',
@@ -18,20 +16,60 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
   const [selectedItems, setSelectedItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [availableItems, setAvailableItems] = useState([]);
+  const [loadingMenu, setLoadingMenu] = useState(false);
 
-  // Mock menu items for selection
-  const availableItems = [
-    { id: 1, name: 'Grilled Salmon', price: 32.00, category: 'Main Course' },
-    { id: 2, name: 'Beef Burger', price: 18.00, category: 'Main Course' },
-    { id: 3, name: 'Margherita Pizza', price: 24.00, category: 'Main Course' },
-    { id: 4, name: 'Caesar Salad', price: 12.00, category: 'Salads' },
-    { id: 5, name: 'Garlic Bread', price: 6.00, category: 'Appetizers' },
-    { id: 6, name: 'French Fries', price: 8.00, category: 'Sides' },
-    { id: 7, name: 'Chocolate Cake', price: 8.99, category: 'Desserts' },
-    { id: 8, name: 'Soft Drinks', price: 6.00, category: 'Beverages' },
-    { id: 9, name: 'Fresh Orange Juice', price: 5.00, category: 'Beverages' },
-    { id: 10, name: 'Chocolate Shake', price: 12.00, category: 'Beverages' }
-  ];
+  // Populate form when editing
+  useEffect(() => {
+    if (editingOrder && isOpen) {
+      setOrderType(editingOrder.type);
+      setFormData({
+        customerName: editingOrder.customerName || '',
+        phone: editingOrder.phone || '',
+        email: editingOrder.email || '',
+        tableNumber: editingOrder.tableNumber || '',
+        guests: editingOrder.guests || '',
+        address: editingOrder.address || '',
+        specialInstructions: editingOrder.specialInstructions || ''
+      });
+      setSelectedItems(editingOrder.items || []);
+    } else if (!editingOrder && isOpen) {
+      resetForm();
+    }
+  }, [editingOrder, isOpen]);
+
+  // Fetch menu items when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchMenuItems();
+    }
+  }, [isOpen]);
+
+  const fetchMenuItems = async () => {
+    try {
+      setLoadingMenu(true);
+      const response = await apiService.menu.getMenuItems();
+      if (response.success && response.data) {
+        // Filter only available items and format for order selection
+        const formattedItems = response.data
+          .filter(item => item.available)
+          .map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            category: item.category,
+            image: item.image
+          }));
+        setAvailableItems(formattedItems);
+      }
+    } catch (err) {
+      console.error('Failed to fetch menu items:', err);
+      // Keep empty array on error
+      setAvailableItems([]);
+    } finally {
+      setLoadingMenu(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -98,55 +136,44 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
       setError('Table number is required for dine-in orders');
       return;
     }
-    if (orderType === 'delivery' && !formData.address.trim()) {
-      setError('Delivery address is required');
-      return;
-    }
 
     try {
       setLoading(true);
       
-      // TODO: API CALL - Create new order
-      // TODO: import apiService from '../../../services/apiService';
-      // Uncomment the line below when backend is ready:
-      // const response = await apiService.orders.createOrder({
-      //   customerName: formData.customerName,
-      //   phone: formData.phone,
-      //   email: formData.email,
-      //   type: orderType,
-      //   tableNumber: orderType === 'dine-in' ? formData.tableNumber : null,
-      //   guests: orderType === 'dine-in' ? formData.guests : null,
-      //   address: orderType === 'delivery' ? formData.address : null,
-      //   items: selectedItems,
-      //   specialInstructions: formData.specialInstructions,
-      //   total: calculateTotal()
-      // });
-
-      // CURRENT: Mock order creation - remove when API is ready
-      const newOrder = {
-        id: Math.floor(Math.random() * 10000),
+      const orderData = {
         customerName: formData.customerName,
         phone: formData.phone,
         email: formData.email,
         type: orderType,
         tableNumber: orderType === 'dine-in' ? parseInt(formData.tableNumber) : null,
         guests: orderType === 'dine-in' ? parseInt(formData.guests) : null,
-        address: orderType === 'delivery' ? formData.address : null,
+        address: null,
         items: selectedItems,
         specialInstructions: formData.specialInstructions,
-        total: parseFloat(calculateTotal()),
-        status: 'pending',
-        timestamp: new Date().toISOString(),
-        progress: 0,
-        orderTime: 'Just now'
+        total: parseFloat(calculateTotal())
       };
 
-      onOrderCreated(newOrder);
-      resetForm();
-      onClose();
+      let response;
+      if (editingOrder) {
+        // Update existing order
+        response = await apiService.orders.updateOrder(editingOrder.id, orderData);
+      } else {
+        // Create new order
+        response = await apiService.orders.createOrder(orderData);
+      }
+
+      if (response.success) {
+        if (editingOrder) {
+          onOrderUpdated(response.data);
+        } else {
+          onOrderCreated(response.data);
+        }
+        resetForm();
+        onClose();
+      }
     } catch (err) {
-      setError(err.message || 'Failed to create order');
-      console.error('Error creating order:', err);
+      setError(err.message || `Failed to ${editingOrder ? 'update' : 'create'} order`);
+      console.error(`Error ${editingOrder ? 'updating' : 'creating'} order:`, err);
     } finally {
       setLoading(false);
     }
@@ -174,7 +201,7 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Create New Order</h2>
+          <h2 className="text-2xl font-bold">{editingOrder ? 'Edit Order' : 'Create New Order'}</h2>
           <button
             onClick={onClose}
             className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
@@ -195,8 +222,8 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
             {/* Order Type Selection */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <label className="block text-sm font-semibold text-gray-700 mb-3">Order Type</label>
-              <div className="grid grid-cols-3 gap-3">
-                {['dine-in', 'takeaway', 'delivery'].map(type => (
+              <div className="grid grid-cols-2 gap-3">
+                {['dine-in', 'takeaway'].map(type => (
                   <button
                     key={type}
                     type="button"
@@ -207,7 +234,7 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
                         : 'bg-white text-gray-700 border border-gray-300 hover:border-orange-500'
                     }`}
                   >
-                    <i className={`fas fa-${type === 'dine-in' ? 'utensils' : type === 'takeaway' ? 'shopping-bag' : 'truck'} mr-1`}></i>
+                    <i className={`fas fa-${type === 'dine-in' ? 'utensils' : 'shopping-bag'} mr-1`}></i>
                     {type.replace('-', ' ')}
                   </button>
                 ))}
@@ -272,37 +299,47 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
               </div>
             )}
 
-            {orderType === 'delivery' && (
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Delivery Details</label>
-                <textarea
-                  name="address"
-                  placeholder="Delivery Address *"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  rows="2"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
-                  required
-                ></textarea>
-              </div>
-            )}
-
             {/* Items Selection */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-3">Select Items</label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200">
-                {availableItems.map(item => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleAddItem(item)}
-                    className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-orange-50 hover:border-orange-500 transition-all text-left"
-                  >
-                    <div className="text-sm font-medium text-gray-800">{item.name}</div>
-                    <div className="text-xs text-gray-600">{item.price.toFixed(2)} <i className="fa-solid fa-bangladeshi-taka-sign"></i></div>
+              {loadingMenu ? (
+                <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+                    <p className="text-sm text-gray-600">Loading menu items...</p>
+                  </div>
+                </div>
+              ) : availableItems.length === 0 ? (
+                <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-600">No menu items available</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-64 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-200">
+                  {availableItems.map(item => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleAddItem(item)}
+                      className="bg-white border border-gray-300 rounded-lg hover:bg-orange-50 hover:border-orange-500 transition-all text-left overflow-hidden"
+                    >
+                      {item.image && (
+                        <img 
+                          src={item.image} 
+                          alt={item.name}
+                          className="w-full h-20 object-cover"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/150?text=No+Image';
+                          }}
+                        />
+                      )}
+                      <div className="p-2">
+                        <div className="text-sm font-medium text-gray-800 truncate">{item.name}</div>
+                        <div className="text-xs text-gray-600">{item.price.toFixed(2)} <i className="fa-solid fa-bangladeshi-taka-sign"></i></div>
+                      </div>
                   </button>
                 ))}
               </div>
+              )}
             </div>
 
             {/* Selected Items */}
@@ -342,7 +379,7 @@ const NewOrderModal = ({ isOpen, onClose, onOrderCreated }) => {
                     <div></div>
                     <div></div>
                     <div className="text-center">Total:</div>
-                    <div className="text-right text-orange-600">${calculateTotal()}</div>
+                    <div className="text-right text-orange-600">{calculateTotal()} <i className="fa-solid fa-bangladeshi-taka-sign"></i></div>
                     <div></div>
                   </div>
                 </div>

@@ -1,46 +1,8 @@
-const QuickActions = ({ searchQuery, setSearchQuery, onRefresh }) => {
-  const quickActions = [
-    {
-      label: "Quick Order",
-      icon: "fas fa-bolt",
-      color: "bg-purple-500 hover:bg-purple-600",
-      description: "Fast order entry"
-    },
-    {
-      label: "Split Bill",
-      icon: "fas fa-receipt",
-      color: "bg-blue-500 hover:bg-blue-600",
-      description: "Divide bill multiple ways"
-    },
-    {
-      label: "Print Receipt",
-      icon: "fas fa-print",
-      color: "bg-green-500 hover:bg-green-600",
-      description: "Print current order"
-    },
-    {
-      label: "Hold Order",
-      icon: "fas fa-pause",
-      color: "bg-yellow-500 hover:bg-yellow-600",
-      description: "Temporarily hold order"
-    }
-  ];
-
+const QuickActions = ({ searchQuery, setSearchQuery}) => {
+  
   return (
     <div className="mb-6">
-      <h2 className="text-lg font-semibold mb-4 text-gray-800">POS Quick Actions</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {quickActions.map((action, index) => (
-          <button
-            key={index}
-            className={`${action.color} text-white p-4 rounded-lg shadow-lg flex flex-col items-center justify-center gap-2 transition-all duration-300 hover:scale-105`}
-          >
-            <i className={`${action.icon} text-xl`}></i>
-            <span className="font-semibold text-sm">{action.label}</span>
-            <span className="text-xs opacity-90">{action.description}</span>
-          </button>
-        ))}
-      </div>
+     
        {/* Search Bar */}
       <div className="bg-white rounded-lg shadow p-4 mb-4 mt-4">
         <div className="relative">

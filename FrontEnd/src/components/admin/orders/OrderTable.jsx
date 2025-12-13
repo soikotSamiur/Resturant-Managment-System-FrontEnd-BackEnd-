@@ -1,6 +1,6 @@
 import { useAuth } from '../../../context/AuthContext';
 
-const OrderTable = ({ orders, onStatusUpdate }) => {
+const OrderTable = ({ orders, onStatusUpdate, onEditOrder }) => {
   const { user } = useAuth();
   const role = user?.role;
   const getStatusBadge = (status) => {
@@ -52,13 +52,12 @@ const OrderTable = ({ orders, onStatusUpdate }) => {
                 <td className="py-3 text-gray-800">
                   <span className={`px-2 py-1 rounded text-xs ${
                     order.type === 'dine-in' ? 'bg-blue-100 text-blue-800' :
-                    order.type === 'takeaway' ? 'bg-green-100 text-green-800' :
-                    'bg-purple-100 text-purple-800'
+                    'bg-green-100 text-green-800'
                   }`}>
                     {order.type}
                   </span>
                 </td>
-                <td className="py-3 text-gray-800 font-semibold">${order.total.toFixed(2)}</td>
+                <td className="py-3 text-gray-800 font-semibold">{order.total.toFixed(2)} <i className="fa-solid fa-bangladeshi-taka-sign"></i></td>
                 <td className="py-3">{getStatusBadge(order.status)}</td>
                 <td className="py-3 text-gray-600">{order.orderTime}</td>
                 <td className="py-3">
@@ -67,8 +66,12 @@ const OrderTable = ({ orders, onStatusUpdate }) => {
                       <i className="fas fa-eye"></i>
                     </button>
                     {/* Only Admins and Cashiers can edit orders */}
-                    {(role === 'Admin' || role === 'Cashier') && (
-                      <button className="text-green-600 hover:text-green-800 transition-colors">
+                    {(role === 'Admin' || role === 'Cashier') && order.status === 'pending' && (
+                      <button 
+                        onClick={() => onEditOrder(order)}
+                        className="text-green-600 hover:text-green-800 transition-colors"
+                        title="Edit Order"
+                      >
                         <i className="fas fa-edit"></i>
                       </button>
                     )}

@@ -280,7 +280,6 @@ const MenuPage = () => {
             <QuickActions
                 searchQuery={searchQuery} 
                 setSearchQuery={setSearchQuery}
-                onRefresh={fetchMenuData}
             />
 
             <div className="flex gap-5 flex-col lg:flex-row">
