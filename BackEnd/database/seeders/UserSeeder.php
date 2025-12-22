@@ -8,9 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+    
     public function run(): void
     {
         // Default Admin User
@@ -19,8 +17,8 @@ class UserSeeder extends Seeder
             'email' => 'super@admin.com',
             'phone' => '0123456789',
             'address' => '123 Admin Street',
-            'role' => 'Admin', // default role
-            'password' => Hash::make('password123'), // default password
+            'role' => 'Admin', 
+            'password' => Hash::make('password123'), 
         ]);
     }
 }

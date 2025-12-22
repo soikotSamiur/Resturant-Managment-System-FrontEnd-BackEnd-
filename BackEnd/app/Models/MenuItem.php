@@ -31,4 +31,14 @@ class MenuItem extends Model
         'is_vegan' => 'boolean',
         'preparation_time' => 'integer'
     ];
+
+    /**
+     * Relationship: A menu item can use many inventory items
+     */
+    public function inventoryItems()
+    {
+        return $this->belongsToMany(InventoryItem::class, 'inventory_menu_item')
+                    ->withPivot('quantity_required')
+                    ->withTimestamps();
+    }
 }

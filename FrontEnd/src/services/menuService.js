@@ -205,6 +205,27 @@ const menuService = {
         data: { id, available: true }
       };
     }
+  },
+
+  // Get menu item ingredients
+  getMenuItemIngredients: async (id) => {
+    const res = await API.get(`/menu-items/${id}/ingredients`);
+    return res.data;
+  },
+
+  // Add ingredient to menu item
+  addIngredientToMenuItem: async (menuItemId, inventoryItemId, quantityRequired) => {
+    const res = await API.post(`/menu-items/${menuItemId}/ingredients`, {
+      inventoryItemId,
+      quantityRequired
+    });
+    return res.data;
+  },
+
+  // Remove ingredient from menu item
+  removeIngredientFromMenuItem: async (menuItemId, inventoryItemId) => {
+    const res = await API.delete(`/menu-items/${menuItemId}/ingredients/${inventoryItemId}`);
+    return res.data;
   }
 };
 

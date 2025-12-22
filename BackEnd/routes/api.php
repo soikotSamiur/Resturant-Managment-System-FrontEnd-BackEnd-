@@ -38,6 +38,11 @@ Route::middleware(['auth:sanctum', 'role:Admin,Waiter,Chef,Employee'])->group(fu
     Route::put('/menu-items/{id}', [MenuController::class, 'updateMenuItem']);
     Route::delete('/menu-items/{id}', [MenuController::class, 'deleteMenuItem']);
     Route::patch('/menu-items/{id}/toggle-availability', [MenuController::class, 'toggleAvailability']);
+    
+    // Menu item ingredients management
+    Route::get('/menu-items/{id}/ingredients', [MenuController::class, 'getMenuItemIngredients']);
+    Route::post('/menu-items/{id}/ingredients', [MenuController::class, 'addIngredientToMenuItem']);
+    Route::delete('/menu-items/{menuItemId}/ingredients/{inventoryItemId}', [MenuController::class, 'removeIngredientFromMenuItem']);
 });
 
 // Category Routes - Admin, Waiter, Chef, Employee can access
@@ -57,18 +62,16 @@ Route::middleware(['auth:sanctum', 'role:Admin,Waiter,Chef,Cashier,Employee'])->
 
 // Inventory Routes - Only Admin can access
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
-    Route::get('/inventory', function () {
-        return response()->json(['success' => true, 'data' => [], 'message' => 'Inventory endpoint']);
-    });
-    Route::post('/inventory', function () {
-        return response()->json(['success' => true, 'message' => 'Inventory item created']);
-    });
-    Route::put('/inventory/{id}', function () {
-        return response()->json(['success' => true, 'message' => 'Inventory item updated']);
-    });
-    Route::delete('/inventory/{id}', function () {
-        return response()->json(['success' => true, 'message' => 'Inventory item deleted']);
-    });
+    Route::get('/inventory', [App\Http\Controllers\InventoryController::class, 'index']);
+    Route::post('/inventory', [App\Http\Controllers\InventoryController::class, 'store']);
+    Route::get('/inventory/stats', [App\Http\Controllers\InventoryController::class, 'getStats']);
+    Route::get('/inventory/low-stock', [App\Http\Controllers\InventoryController::class, 'getLowStock']);
+    Route::get('/inventory/{id}', [App\Http\Controllers\InventoryController::class, 'show']);
+    Route::put('/inventory/{id}', [App\Http\Controllers\InventoryController::class, 'update']);
+    Route::delete('/inventory/{id}', [App\Http\Controllers\InventoryController::class, 'destroy']);
+    Route::patch('/inventory/{id}/stock', [App\Http\Controllers\InventoryController::class, 'updateStock']);
+    Route::post('/inventory/{id}/link-menu-item', [App\Http\Controllers\InventoryController::class, 'linkToMenuItem']);
+    Route::delete('/inventory/{id}/unlink-menu-item/{menuItemId}', [App\Http\Controllers\InventoryController::class, 'unlinkFromMenuItem']);
 });
 
 // Reports Routes - Only Admin can access

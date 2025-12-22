@@ -18,22 +18,14 @@ const AddItemModal = ({ onClose, onSave }) => {
       setIsSubmitting(true);
       setError(null);
 
-      // TODO: API CALL - Create new inventory item
-      // TODO: import apiService from '../../../services/apiService';
-      // TODO: await apiService.inventory.createInventoryItem({
-      // TODO:   ...formData,
-      // TODO:   currentStock: parseFloat(formData.currentStock),
-      // TODO:   reorderLevel: parseFloat(formData.reorderLevel)
-      // TODO: });
-
-      // CURRENT: Mock save - remove when API is ready
+      // Call parent with formatted data
       onSave({
         ...formData,
         currentStock: parseFloat(formData.currentStock),
-        reorderLevel: parseFloat(formData.reorderLevel)
+        reorderLevel: parseFloat(formData.reorderLevel),
+        costPerUnit: formData.costPerUnit ? parseFloat(formData.costPerUnit) : null
       });
     } catch (err) {
-      // TODO: Handle API errors
       setError(err.message || 'Failed to add item');
       console.error('Failed to add inventory item:', err);
     } finally {

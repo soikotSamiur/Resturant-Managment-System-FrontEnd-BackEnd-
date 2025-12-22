@@ -1,10 +1,10 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use Illuminate\Http\Request;
 use App\Models\MenuItem;
 use App\Models\Category;
+use App\Models\InventoryItem;
 use Illuminate\Support\Str;
 
 class MenuController extends Controller
@@ -243,5 +243,64 @@ class MenuController extends Controller
             $category->count = $count;
             $category->save();
         }
+    }
+
+    // Get menu item with its inventory ingredients
+    public function getMenuItemIngredients($id)
+    {
+        $menuItem = MenuItem::with('inventoryItems')->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'menuItem' => [
+                    'id' => $menuItem->id,
+                    'name' => $menuItem->name
+                ],
+                'ingredients' => $menuItem->inventoryItems->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->name,
+                        'quantityRequired' => (float) $item->pivot->quantity_required,
+                        'unit' => $item->unit,
+                        'currentStock' => (float) $item->current_stock
+                    ];
+                })
+            ]
+        ]);
+    }
+
+    // Add ingredient to menu item
+    public function addIngredientToMenuItem(Request $request, $id)
+    {
+        $request->validate([
+            'inventoryItemId' => 'required|exists:inventory_items,id',
+            'quantityRequired' => 'required|numeric|min:0'
+        ]);
+
+        $menuItem = MenuItem::findOrFail($id);
+        $inventoryItem = InventoryItem::findOrFail($request->inventoryItemId);
+
+        // Attach or update the relationship
+        $menuItem->inventoryItems()->syncWithoutDetaching([
+            $inventoryItem->id => ['quantity_required' => $request->quantityRequired]
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Ingredient '{$inventoryItem->name}' added to '{$menuItem->name}'"
+        ]);
+    }
+
+    // Remove ingredient from menu item
+    public function removeIngredientFromMenuItem($menuItemId, $inventoryItemId)
+    {
+        $menuItem = MenuItem::findOrFail($menuItemId);
+        $menuItem->inventoryItems()->detach($inventoryItemId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Ingredient removed from menu item'
+        ]);
     }
 }

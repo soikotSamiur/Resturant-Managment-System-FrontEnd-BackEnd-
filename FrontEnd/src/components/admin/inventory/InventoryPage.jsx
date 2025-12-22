@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import apiService from '../../../services/apiService';
 import InventoryStats from './InventoryStats';
 import SearchFilterBar from './SearchFilterBar';
 import InventoryTable from './InventoryTable';
@@ -7,110 +8,6 @@ import LowStocksAlerts from './LowStocksAlerts';
 import AddItemModal from './AddItemModal';
 import EditItemModal from './EditItemModal';
 import Notification from './Notification';
-
-// CURRENT: Mock inventory data - remove when API is ready
-const mockInventoryData = [
-      {
-        id: 1,
-        name: "Salmon Fillet",
-        category: "meat",
-        currentStock: 5,
-        unit: "kg",
-        reorderLevel: 10,
-        supplier: "Ocean Fresh Co.",
-        status: "low_stock"
-      },
-      {
-        id: 2,
-        name: "Truffle Oil",
-        category: "spices",
-        currentStock: 3,
-        unit: "L",
-        reorderLevel: 5,
-        supplier: "Gourmet Imports",
-        status: "low_stock"
-      },
-      {
-        id: 3,
-        name: "Parmesan Cheese",
-        category: "dairy",
-        currentStock: 2,
-        unit: "kg",
-        reorderLevel: 5,
-        supplier: "Italian Delights",
-        status: "low_stock"
-      },
-      {
-        id: 4,
-        name: "Fresh Basil",
-        category: "vegetables",
-        currentStock: 0.1,
-        unit: "kg",
-        reorderLevel: 0.5,
-        supplier: "Local Farm",
-        status: "low_stock"
-      },
-      {
-        id: 5,
-        name: "Beef Patties",
-        category: "meat",
-        currentStock: 25,
-        unit: "kg",
-        reorderLevel: 10,
-        supplier: "Prime Meats",
-        status: "in_stock"
-      },
-      {
-        id: 6,
-        name: "Lettuce",
-        category: "vegetables",
-        currentStock: 8,
-        unit: "kg",
-        reorderLevel: 5,
-        supplier: "Green Valley Farms",
-        status: "in_stock"
-      },
-      {
-        id: 7,
-        name: "Tomatoes",
-        category: "vegetables",
-        currentStock: 12,
-        unit: "kg",
-        reorderLevel: 8,
-        supplier: "Sunshine Produce",
-        status: "in_stock"
-      },
-      {
-        id: 8,
-        name: "Cooking Oil",
-        category: "other",
-        currentStock: 15,
-        unit: "L",
-        reorderLevel: 5,
-        supplier: "Chef's Choice",
-        status: "in_stock"
-      },
-      {
-        id: 9,
-        name: "Mozzarella Cheese",
-        category: "dairy",
-        currentStock: 0,
-        unit: "kg",
-        reorderLevel: 8,
-        supplier: "Italian Delights",
-        status: "out_of_stock"
-      },
-      {
-        id: 10,
-        name: "Orange Juice",
-        category: "beverages",
-        currentStock: 24,
-        unit: "bottles",
-        reorderLevel: 12,
-        supplier: "Fresh Squeezed Co.",
-        status: "in_stock"
-      }
-];
 
 const InventoryPage = () => {
   const [inventoryItems, setInventoryItems] = useState([]);
@@ -121,34 +18,27 @@ const InventoryPage = () => {
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchInventory = async () => {
+  const fetchInventory = async (filters = {}) => {
     try {
       setIsLoading(true);
-      // TODO: API CALL - Get all inventory items
-      // TODO: import apiService from '../../../services/apiService';
-      // TODO: const response = await apiService.inventory.getInventory();
-      // TODO: setInventoryItems(response.items);
-      // TODO: setFilteredItems(response.items);
+      const response = await apiService.inventory.getInventory(filters);
       
-      // CURRENT: Mock data - remove when API is ready
-      setInventoryItems(mockInventoryData);
-      setFilteredItems(mockInventoryData);
+      if (response.success) {
+        setInventoryItems(response.data);
+        setFilteredItems(response.data);
+      }
       setIsLoading(false);
     } catch (err) {
-      // TODO: Handle API errors
       console.error('Failed to fetch inventory:', err);
+      showNotification('Failed to load inventory. Please try again.', 'error');
       setIsLoading(false);
     }
   };
 
-  // Initialize inventory with TODO for API
+  // Initialize inventory
   useEffect(() => {
     fetchInventory();
   }, []);
-
-  const saveInventoryToStorage = (items) => {
-    localStorage.setItem('dinesmart_inventory', JSON.stringify(items));
-  };
 
   const showNotification = (message, type = 'info') => {
     setNotification({ show: true, message, type });
@@ -169,45 +59,35 @@ const InventoryPage = () => {
     setFilteredItems(filtered);
   };
 
-  const updateItemStatus = (item) => {
-    const status = item.currentStock === 0 
-      ? 'out_of_stock' 
-      : item.currentStock <= item.reorderLevel 
-        ? 'low_stock' 
-        : 'in_stock';
-    
-    return { ...item, status };
+  const handleAddItem = async (newItemData) => {
+    try {
+      const response = await apiService.inventory.createInventoryItem(newItemData);
+      
+      if (response.success) {
+        await fetchInventory();
+        setShowAddModal(false);
+        showNotification('Item added successfully!', 'success');
+      }
+    } catch (err) {
+      console.error('Failed to add inventory item:', err);
+      showNotification(err.response?.data?.message || 'Failed to add item', 'error');
+    }
   };
 
-  const handleAddItem = (newItemData) => {
-    const newItem = {
-      id: Date.now(),
-      ...newItemData
-    };
-
-    const updatedItem = updateItemStatus(newItem);
-    const updatedItems = [...inventoryItems, updatedItem];
-    
-    setInventoryItems(updatedItems);
-    setFilteredItems(updatedItems);
-    saveInventoryToStorage(updatedItems);
-    setShowAddModal(false);
-    showNotification('Item added successfully!', 'success');
-  };
-
-  const handleEditItem = (updatedItemData) => {
-    const updatedItems = inventoryItems.map(item => 
-      item.id === editingItem.id 
-        ? updateItemStatus({ ...item, ...updatedItemData })
-        : item
-    );
-
-    setInventoryItems(updatedItems);
-    setFilteredItems(updatedItems);
-    saveInventoryToStorage(updatedItems);
-    setShowEditModal(false);
-    setEditingItem(null);
-    showNotification('Item updated successfully!', 'success');
+  const handleEditItem = async (updatedItemData) => {
+    try {
+      const response = await apiService.inventory.updateInventoryItem(editingItem.id, updatedItemData);
+      
+      if (response.success) {
+        await fetchInventory();
+        setShowEditModal(false);
+        setEditingItem(null);
+        showNotification('Item updated successfully!', 'success');
+      }
+    } catch (err) {
+      console.error('Failed to update inventory item:', err);
+      showNotification(err.response?.data?.message || 'Failed to update item', 'error');
+    }
   };
 
   const openEditItemModal = (item) => {
@@ -215,32 +95,35 @@ const InventoryPage = () => {
     setShowEditModal(true);
   };
 
-  const updateStock = (itemId, change) => {
-    const updatedItems = inventoryItems.map(item => {
-      if (item.id === itemId) {
-        const newStock = Math.max(0, item.currentStock + change);
-        const updatedItem = { ...item, currentStock: newStock };
-        return updateItemStatus(updatedItem);
+  const updateStock = async (itemId, change) => {
+    try {
+      const response = await apiService.inventory.updateStock(itemId, change);
+      
+      if (response.success) {
+        await fetchInventory();
+        const itemName = inventoryItems.find(item => item.id === itemId)?.name;
+        showNotification(`Stock updated for ${itemName}`, 'success');
       }
-      return item;
-    });
-
-    const itemName = inventoryItems.find(item => item.id === itemId)?.name;
-    
-    setInventoryItems(updatedItems);
-    setFilteredItems(updatedItems);
-    saveInventoryToStorage(updatedItems);
-    showNotification(`Stock updated for ${itemName}`, 'success');
+    } catch (err) {
+      console.error('Failed to update stock:', err);
+      showNotification(err.response?.data?.message || 'Failed to update stock', 'error');
+    }
   };
 
-  const deleteItem = (itemId) => {
+  const deleteItem = async (itemId) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
 
-    const updatedItems = inventoryItems.filter(item => item.id !== itemId);
-    setInventoryItems(updatedItems);
-    setFilteredItems(updatedItems);
-    saveInventoryToStorage(updatedItems);
-    showNotification('Item deleted successfully!', 'success');
+    try {
+      const response = await apiService.inventory.deleteInventoryItem(itemId);
+      
+      if (response.success) {
+        await fetchInventory();
+        showNotification('Item deleted successfully!', 'success');
+      }
+    } catch (err) {
+      console.error('Failed to delete item:', err);
+      showNotification(err.response?.data?.message || 'Failed to delete item', 'error');
+    }
   };
 
   const reorderItem = (itemId) => {
@@ -256,14 +139,14 @@ const InventoryPage = () => {
     
     const link = document.createElement('a');
     link.href = URL.createObjectURL(dataBlob);
-    link.download = 'inventory-export.json';
+    link.download = `inventory-export-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     
     showNotification('Inventory exported successfully!', 'success');
   };
 
-  const refreshInventory = () => {
-    initializeInventory();
+  const refreshInventory = async () => {
+    await fetchInventory();
     showNotification('Inventory refreshed!', 'success');
   };
 

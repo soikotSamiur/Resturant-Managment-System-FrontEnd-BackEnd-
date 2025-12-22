@@ -32,22 +32,14 @@ const EditItemModal = ({ item, onClose, onSave }) => {
       setIsSubmitting(true);
       setError(null);
 
-      // TODO: API CALL - Update inventory item
-      // TODO: import apiService from '../../../services/apiService';
-      // TODO: await apiService.inventory.updateInventoryItem(item.id, {
-      // TODO:   ...formData,
-      // TODO:   currentStock: parseFloat(formData.currentStock),
-      // TODO:   reorderLevel: parseFloat(formData.reorderLevel)
-      // TODO: });
-
-      // CURRENT: Mock save - remove when API is ready
+      // Call parent with formatted data
       onSave({
         ...formData,
         currentStock: parseFloat(formData.currentStock),
-        reorderLevel: parseFloat(formData.reorderLevel)
+        reorderLevel: parseFloat(formData.reorderLevel),
+        costPerUnit: formData.costPerUnit ? parseFloat(formData.costPerUnit) : null
       });
     } catch (err) {
-      // TODO: Handle API errors
       setError(err.message || 'Failed to update item');
       console.error('Failed to update inventory item:', err);
     } finally {

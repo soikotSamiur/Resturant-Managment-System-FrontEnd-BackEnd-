@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\MenuItem;
+use App\Models\InventoryItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -104,6 +106,39 @@ class OrderController extends Controller
         DB::beginTransaction();
         
         try {
+            // Check inventory availability for all items
+            $insufficientStock = [];
+            
+            foreach ($request->items as $item) {
+                $menuItem = MenuItem::with('inventoryItems')->find($item['id']);
+                
+                if ($menuItem && $menuItem->inventoryItems->count() > 0) {
+                    foreach ($menuItem->inventoryItems as $inventoryItem) {
+                        $requiredQuantity = $inventoryItem->pivot->quantity_required * $item['quantity'];
+                        
+                        if ($inventoryItem->current_stock < $requiredQuantity) {
+                            $insufficientStock[] = [
+                                'item' => $menuItem->name,
+                                'ingredient' => $inventoryItem->name,
+                                'required' => $requiredQuantity,
+                                'available' => $inventoryItem->current_stock,
+                                'unit' => $inventoryItem->unit
+                            ];
+                        }
+                    }
+                }
+            }
+            
+            // If any item has insufficient stock, return error
+            if (count($insufficientStock) > 0) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Insufficient inventory stock',
+                    'insufficientStock' => $insufficientStock
+                ], 400);
+            }
+            
             // Create order
             $order = Order::create([
                 'customer_name' => $request->customerName,
@@ -119,7 +154,7 @@ class OrderController extends Controller
                 'progress' => 0
             ]);
             
-            // Create order items
+            // Create order items and deduct inventory
             foreach ($request->items as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -128,6 +163,16 @@ class OrderController extends Controller
                     'price' => $item['price'],
                     'quantity' => $item['quantity']
                 ]);
+                
+                // Deduct inventory for this menu item
+                $menuItem = MenuItem::with('inventoryItems')->find($item['id']);
+                
+                if ($menuItem && $menuItem->inventoryItems->count() > 0) {
+                    foreach ($menuItem->inventoryItems as $inventoryItem) {
+                        $requiredQuantity = $inventoryItem->pivot->quantity_required * $item['quantity'];
+                        $inventoryItem->deductStock($requiredQuantity);
+                    }
+                }
             }
             
             DB::commit();
