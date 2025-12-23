@@ -90,7 +90,7 @@ class InventoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'category' => 'required|in:vegetables,meat,dairy,beverages,spices,other',
+            'category' => 'required|in:vegetables,meat,dairy,beverages,spices,bakery,oil,sauces,dessert,fruits,other',
             'currentStock' => 'required|numeric|min:0',
             'unit' => 'required|string|max:50',
             'reorderLevel' => 'required|numeric|min:0',
@@ -136,7 +136,7 @@ class InventoryController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'category' => 'required|in:vegetables,meat,dairy,beverages,spices,other',
+            'category' => 'required|in:vegetables,meat,dairy,beverages,spices,bakery,oil,sauces,dessert,fruits,other',
             'currentStock' => 'required|numeric|min:0',
             'unit' => 'required|string|max:50',
             'reorderLevel' => 'required|numeric|min:0',

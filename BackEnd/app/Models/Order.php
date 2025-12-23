@@ -20,14 +20,16 @@ class Order extends Model
         'special_instructions',
         'total',
         'status',
-        'progress'
+        'progress',
+        'inventory_deducted'
     ];
 
     protected $casts = [
         'total' => 'decimal:2',
         'progress' => 'integer',
         'table_number' => 'integer',
-        'guests' => 'integer'
+        'guests' => 'integer',
+        'inventory_deducted' => 'boolean'
     ];
 
     // Relationship: An order has many order items

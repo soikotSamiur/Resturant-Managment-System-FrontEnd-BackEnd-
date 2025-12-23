@@ -24,6 +24,7 @@ return new class extends Migration
             $table->decimal('total', 10, 2)->default(0);
             $table->enum('status', ['pending', 'preparing', 'ready', 'completed', 'cancelled'])->default('pending');
             $table->integer('progress')->default(0); // 0-100 percentage
+            $table->boolean('inventory_deducted')->default(false); // Track if inventory has been deducted
             $table->timestamps();
         });
     }

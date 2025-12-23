@@ -154,7 +154,7 @@ class OrderController extends Controller
                 'progress' => 0
             ]);
             
-            // Create order items and deduct inventory
+            // Create order items (inventory will be deducted when order status changes to 'preparing')
             foreach ($request->items as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -163,16 +163,6 @@ class OrderController extends Controller
                     'price' => $item['price'],
                     'quantity' => $item['quantity']
                 ]);
-                
-                // Deduct inventory for this menu item
-                $menuItem = MenuItem::with('inventoryItems')->find($item['id']);
-                
-                if ($menuItem && $menuItem->inventoryItems->count() > 0) {
-                    foreach ($menuItem->inventoryItems as $inventoryItem) {
-                        $requiredQuantity = $inventoryItem->pivot->quantity_required * $item['quantity'];
-                        $inventoryItem->deductStock($requiredQuantity);
-                    }
-                }
             }
             
             DB::commit();
@@ -320,60 +310,99 @@ class OrderController extends Controller
             'status' => 'required|in:pending,preparing,ready,completed,cancelled'
         ]);
         
-        $order = Order::findOrFail($id);
-        $order->status = $request->status;
+        DB::beginTransaction();
         
-        // Update progress based on status
-        switch ($request->status) {
-            case 'pending':
-                $order->progress = 0;
-                break;
-            case 'preparing':
-                $order->progress = 50;
-                break;
-            case 'ready':
-                $order->progress = 75;
-                break;
-            case 'completed':
-                $order->progress = 100;
-                break;
-            case 'cancelled':
-                $order->progress = 0;
-                break;
+        try {
+            $order = Order::with('orderItems')->findOrFail($id);
+            $previousStatus = $order->status;
+            $order->status = $request->status;
+            
+            // Update progress based on status
+            switch ($request->status) {
+                case 'pending':
+                    $order->progress = 0;
+                    break;
+                case 'preparing':
+                    $order->progress = 50;
+                    
+                    // Deduct inventory when order is accepted (moved to preparing)
+                    if (!$order->inventory_deducted) {
+                        foreach ($order->orderItems as $orderItem) {
+                            $menuItem = MenuItem::with('inventoryItems')->find($orderItem->menu_item_id);
+                            
+                            if ($menuItem && $menuItem->inventoryItems->count() > 0) {
+                                foreach ($menuItem->inventoryItems as $inventoryItem) {
+                                    $requiredQuantity = $inventoryItem->pivot->quantity_required * $orderItem->quantity;
+                                    
+                                    // Check if sufficient stock exists
+                                    if ($inventoryItem->current_stock < $requiredQuantity) {
+                                        DB::rollBack();
+                                        return response()->json([
+                                            'success' => false,
+                                            'message' => "Insufficient stock for {$inventoryItem->name}. Required: {$requiredQuantity} {$inventoryItem->unit}, Available: {$inventoryItem->current_stock} {$inventoryItem->unit}"
+                                        ], 400);
+                                    }
+                                    
+                                    $inventoryItem->deductStock($requiredQuantity);
+                                }
+                            }
+                        }
+                        $order->inventory_deducted = true;
+                    }
+                    break;
+                case 'ready':
+                    $order->progress = 75;
+                    break;
+                case 'completed':
+                    $order->progress = 100;
+                    break;
+                case 'cancelled':
+                    $order->progress = 0;
+                    break;
+            }
+            
+            $order->save();
+            
+            DB::commit();
+        
+            $order->load('orderItems');
+            
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $order->id,
+                    'customerName' => $order->customer_name,
+                    'phone' => $order->phone,
+                    'email' => $order->email,
+                    'type' => $order->type,
+                    'tableNumber' => $order->table_number,
+                    'guests' => $order->guests,
+                    'address' => $order->address,
+                    'specialInstructions' => $order->special_instructions,
+                    'items' => $order->orderItems->map(function($item) {
+                        return [
+                            'id' => $item->menu_item_id,
+                            'name' => $item->name,
+                            'price' => (float) $item->price,
+                            'quantity' => $item->quantity
+                        ];
+                    }),
+                    'total' => (float) $order->total,
+                    'status' => $order->status,
+                    'progress' => $order->progress,
+                    'timestamp' => $order->created_at->toISOString(),
+                    'orderTime' => $order->created_at->diffForHumans()
+                ],
+                'message' => 'Order status updated successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update order status: ' . $e->getMessage()
+            ], 500);
         }
-        
-        $order->save();
-        
-        $order->load('orderItems');
-        
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'id' => $order->id,
-                'customerName' => $order->customer_name,
-                'phone' => $order->phone,
-                'email' => $order->email,
-                'type' => $order->type,
-                'tableNumber' => $order->table_number,
-                'guests' => $order->guests,
-                'address' => $order->address,
-                'specialInstructions' => $order->special_instructions,
-                'items' => $order->orderItems->map(function($item) {
-                    return [
-                        'id' => $item->menu_item_id,
-                        'name' => $item->name,
-                        'price' => (float) $item->price,
-                        'quantity' => $item->quantity
-                    ];
-                }),
-                'total' => (float) $order->total,
-                'status' => $order->status,
-                'progress' => $order->progress,
-                'timestamp' => $order->created_at->toISOString(),
-                'orderTime' => $order->created_at->diffForHumans()
-            ],
-            'message' => 'Order status updated successfully'
-        ]);
     }
     
     // Delete order

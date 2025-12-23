@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const CartSection = ({ cart, onRemoveFromCart, onUpdateQuantity, onClearCart, totalAmount, totalItems }) => {
+const CartSection = ({ cart, onRemoveFromCart, onUpdateQuantity, onClearCart, totalAmount, totalItems, onProcessPayment, tableNumber, onTableNumberChange }) => {
   const [isCartOpen, setIsCartOpen] = useState(true);
 
   const toggleCart = () => {
@@ -10,9 +10,8 @@ const CartSection = ({ cart, onRemoveFromCart, onUpdateQuantity, onClearCart, to
   const handleCheckout = () => {
     if (cart.length === 0) return;
     
-    // In a real POS, this would process payment and create order
-    alert(`Order processed successfully! Total: $${totalAmount.toFixed(2)}`);
-    onClearCart();
+    // Call the parent's payment handler
+    onProcessPayment();
   };
 
   return (
@@ -46,6 +45,28 @@ const CartSection = ({ cart, onRemoveFromCart, onUpdateQuantity, onClearCart, to
 
       {isCartOpen && (
         <>
+          {/* Table Number Input */}
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <i className="fas fa-table mr-2"></i>Table Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={tableNumber}
+              onChange={(e) => onTableNumberChange(e.target.value)}
+              placeholder="Enter table number"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-black"
+              min="1"
+              required
+            />
+            {!tableNumber && (
+              <p className="text-xs text-red-500 mt-1">
+                <i className="fas fa-exclamation-circle mr-1"></i>
+                Table number is required
+              </p>
+            )}
+          </div>
+
           {/* Cart Items */}
           <div className="max-h-96 overflow-y-auto mb-4">
             {cart.length === 0 ? (
@@ -116,20 +137,12 @@ const CartSection = ({ cart, onRemoveFromCart, onUpdateQuantity, onClearCart, to
               <div className="space-y-3">
                 <button 
                   onClick={handleCheckout}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                  disabled={!tableNumber}
+                  className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   <i className="fas fa-credit-card"></i>
                   Process Payment
                 </button>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg font-semibold transition-colors text-sm">
-                    Save Order
-                  </button>
-                  <button className="bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-lg font-semibold transition-colors text-sm">
-                    Split Bill
-                  </button>
-                </div>
               </div>
             </>
           )}

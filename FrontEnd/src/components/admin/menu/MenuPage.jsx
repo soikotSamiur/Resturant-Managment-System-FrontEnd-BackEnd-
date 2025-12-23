@@ -5,6 +5,7 @@ import MenuGrid from './MenuGrid';
 import CartSection from './CartSection';
 import QuickActions from './QuickActions';
 import AddMenuItemModal from './AddMenuItemModal';
+import BillReceipt from './BillReceipt';
 import apiService from '../../../services/apiService';
 
 const MenuPage = () => {
@@ -18,6 +19,10 @@ const MenuPage = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [notification, setNotification] = useState(null);
+    const [showReceipt, setShowReceipt] = useState(false);
+    const [currentOrder, setCurrentOrder] 
+    = useState(null);
+    const [tableNumber, setTableNumber] = useState('');
 
     useEffect(() => {
         fetchMenuData();
@@ -223,6 +228,73 @@ const MenuPage = () => {
         setShowAddModal(true);
     };
 
+    // Handle process payment
+    const handleProcessPayment = async () => {
+        if (cart.length === 0) return;
+
+        try {
+            setLoading(true);
+            
+            // Calculate order totals
+            const subtotal = getTotalAmount();
+            const tax = subtotal * 0.08;
+            const total = subtotal + tax;
+
+            // Prepare order data matching backend requirements
+            const orderData = {
+                customerName: 'Walk-in Customer',
+                phone: '',
+                email: '',
+                type: 'dine-in',
+                tableNumber: tableNumber ? parseInt(tableNumber) : null,
+                guests: null,
+                address: '',
+                specialInstructions: '',
+                items: cart.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price
+                })),
+                total: total
+            };
+
+            // Create order
+            const response = await apiService.orders.createOrder(orderData);
+            
+            if (response.success) {
+                // Set current order for receipt
+                setCurrentOrder({
+                    id: response.data.id,
+                    subtotal: subtotal,
+                    tax: tax,
+                    total: total,
+                    status: response.data.status || 'completed',
+                    tableNumber: tableNumber
+                });
+                
+                // Show receipt
+                setShowReceipt(true);
+                
+                // Show success notification
+                showNotification('Order saved successfully!', 'success');
+            }
+        } catch (err) {
+            console.error('Failed to create order:', err);
+            showNotification('Failed to process payment', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Close receipt and clear cart
+    const handleCloseReceipt = () => {
+        setShowReceipt(false);
+        setCurrentOrder(null);
+        setTableNumber('');
+        clearCart();
+    };
+
     return (
         <div className="md:p-2">
             {/* Notification */}
@@ -334,6 +406,9 @@ const MenuPage = () => {
                         onClearCart={clearCart}
                         totalAmount={getTotalAmount()}
                         totalItems={getTotalItems()}
+                        onProcessPayment={handleProcessPayment}
+                        tableNumber={tableNumber}
+                        onTableNumberChange={setTableNumber}
                     />
                 </div>
             </div>
@@ -350,6 +425,15 @@ const MenuPage = () => {
                 editingItem={editingItem}
                 categories={categories.filter(cat => cat.id !== 'all')}
             />
+
+            {/* Bill Receipt Modal */}
+            {showReceipt && currentOrder && (
+                <BillReceipt 
+                    order={currentOrder}
+                    cart={cart}
+                    onClose={handleCloseReceipt}
+                />
+            )}
         </div>
     );
 };

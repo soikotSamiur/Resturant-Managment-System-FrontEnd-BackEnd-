@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('inventory_items', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->enum('category', ['vegetables', 'meat', 'dairy', 'beverages', 'spices', 'other']);
+            $table->enum('category', ['vegetables', 'meat', 'dairy', 'beverages', 'spices', 'bakery', 'oil', 'sauces', 'dessert', 'fruits', 'other']);
             $table->decimal('current_stock', 10, 2)->default(0);
             $table->string('unit'); // kg, g, L, ml, pieces, bottles, packets
             $table->decimal('reorder_level', 10, 2)->default(0);
